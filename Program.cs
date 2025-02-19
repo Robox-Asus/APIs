@@ -1,4 +1,5 @@
 using APIs.Data;
+using APIs.Middleware;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,11 @@ builder.Services.AddDbContext<HRPayrollDbContext>(options => options.UseSqlServe
 
 var app = builder.Build();
 
+app.UseHttpsRedirection();
+app.UseMiddleware<LoggingMiddleware>();
+app.UseCors(options => options.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod());
+app.UseAuthorization();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -19,11 +25,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-app.UseCors(options => options.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod());
-
-app.UseAuthorization();
-app.MapControllers();   // Add this
+app.MapControllers();
 
 app.Run();
