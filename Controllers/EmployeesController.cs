@@ -13,6 +13,7 @@ namespace APIs.Controllers
     {
         private readonly HRPayrollDbContext _context = context;
 
+        [Authorize(Roles = "User,Manager")]
         [HttpGet]
         public async Task<IActionResult> GetEmployees()
         {
@@ -27,6 +28,7 @@ namespace APIs.Controllers
             return employee is not null ? Ok(employee) : NotFound();
         }
 
+        [Authorize(Roles = "Admin,Manager")]
         [HttpPost]
         public async Task<IActionResult> CreateEmployee(Employee employee)
         {
@@ -36,6 +38,7 @@ namespace APIs.Controllers
             //return CreatedAtAction(nameof(GetEmployee), new { id = employee.EmployeeId }, employee);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateEmployee(int id, Employee updatedEmployee)
         {
@@ -46,6 +49,7 @@ namespace APIs.Controllers
             //return NoContent();
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEmployee(int id)
         {

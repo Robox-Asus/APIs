@@ -57,6 +57,13 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+// Ensure roles exist when the app starts
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await SeedRolesAsync(services);
+}
+
 app.UseHttpsRedirection();
 app.UseMiddleware<LoggingMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -74,3 +81,19 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 
 app.Run();
+
+// **Role Seeding Method**
+async Task SeedRolesAsync(IServiceProvider services)
+{
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+    string[] roleNames = { "Admin", "User", "Manager" };
+
+    foreach (var role in roleNames)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+}

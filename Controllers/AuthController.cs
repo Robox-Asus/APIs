@@ -26,11 +26,16 @@ namespace APIs.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var user = new ApplicationUser { UserName = model.Email, Email = model.Email, FullName = model.FullName };
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded)
             {
+                // **Assign Role to User**
+                await _userManager.AddToRoleAsync(user, "Admin"); // Change role as needed
                 return Ok(new { message = "User registered successfully" });
             }
             return BadRequest(result.Errors);
@@ -42,21 +47,23 @@ namespace APIs.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
             {
-                var token = GenerateJwtToken(user);
+                var token = GenerateJwtTokenAsync(user);
                 return Ok(new { token });
             }
             return Unauthorized();
         }
 
-        private string GenerateJwtToken(ApplicationUser user)
+        private async Task<string> GenerateJwtTokenAsync(ApplicationUser user)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var roles = await _userManager.GetRolesAsync(user);
+            var roleClaims = roles.Select(r => new Claim(ClaimTypes.Role, r)).ToList();
             var claims = new[]
             {
             new Claim(ClaimTypes.Name, user.UserName),
             new Claim(ClaimTypes.Email, user.Email)
-        };
+            }.Concat(roleClaims);
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
